@@ -1,0 +1,187 @@
+Elbette! 42 okullarındaki minishell projesi, kendi küçük bir kabuk (shell) programını yazmanı hedefleyen bir projedir. Bu projede birçok alt konu birleşir: parsing, execution, pipes, redirections, environment management, builtins, ve signal handling gibi.
+
+Aşağıda, projeyi ana başlıklarına ayırarak hangi kod bloklarının olması gerektiğini, bu blokların amaçlarını ve dikkat edilmesi gereken önemli noktaları açıklıyorum:
+
+🔹 1. Input & Lexing (Tokenizer)
+📌 Amaç:
+Kullanıcının girdiği komutu satır satır okuyup, token adı verilen anlamlı parçalara ayırmak.
+
+📦 Gerekli Kod Blokları:
+readline() ile input alma
+
+History’yi yönetme (add_history())
+
+String’i token’lara ayırma (space, pipe |, redirection <, >, <<, >>, quotes ', " gibi)
+
+Quotes içindeki boşlukları ayırmama
+
+Escape karakteri yönetimi
+
+⚠️ Dikkat Edilecekler:
+" ve ' quote’larının kapalı olduğundan emin olun.
+
+Token’ları ayırırken örneğin ls -l | grep txt > out.txt gibi karmaşık yapıları doğru parçaladığınızdan emin olun.
+
+Hatalı syntax (örneğin | |, >'ün sonunda komut olmaması) kontrol edilmeli.
+
+🔹 2. Parsing (Syntax Tree veya Command Structs)
+📌 Amaç:
+Lexing sonucunda oluşan token'ları anlamlı komut bloklarına dönüştürmek.
+
+📦 Gerekli Kod Blokları:
+Token’lardan Command struct’ları üretme
+
+Komut adı (örn. ls)
+
+Argümanlar (örn. -l)
+
+Redirection'lar (örn. > file.txt)
+
+Pipe ile bağlanma durumu
+
+heredoc varsa içeriğini okuma ve geçici dosyada saklama
+
+⚠️ Dikkat Edilecekler:
+Her bir pipe, ayrı bir command olarak ele alınmalı.
+
+heredoc sırasında sinyal yakalama farklı olur (örneğin Ctrl+C çalışmalı ama shell kapanmamalı).
+
+Redirection’lar bir komutla eşleştirilirken sıraya dikkat edilmeli.
+
+🔹 3. Execution (Execve & Builtins)
+📌 Amaç:
+Parse edilen komutları çalıştırmak. Gerekirse fork + execve ile, gerekirse shell içinde (builtins olarak).
+
+📦 Gerekli Kod Blokları:
+Builtin komutları doğrudan çalıştır:
+
+cd, echo, pwd, env, export, unset, exit
+
+Dış komutlar için:
+
+fork(), execve() ve waitpid() kullan
+
+PATH içinde komutları arama
+
+Her pipe için child işlemler oluştur
+
+⚠️ Dikkat Edilecekler:
+Builtin’ler fork edilmeyebilir (örn. cd, exit doğrudan shell’in durumunu değiştirir)
+
+Her pipe için stdin ve stdout yönlendirmesi yapılmalı
+
+execve hata mesajları bash’e benzer şekilde olmalı (örn. command not found)
+
+🔹 4. Redirection (>, >>, <, <<)
+📌 Amaç:
+Giriş ve çıkışı yönlendirmek.
+
+📦 Gerekli Kod Blokları:
+open(), dup2(), close() ile dosya yönlendirme
+
+< → input dosyası
+
+> → output dosyası (overwrite)
+
+>> → output dosyası (append)
+
+<< → heredoc (kullanıcının yazdığı metin)
+
+⚠️ Dikkat Edilecekler:
+Heredoc’da CTRL+C doğru yakalanmalı.
+
+Dosya yoksa açılmalı, varsa overwrite edilmemesi gereken yerde edilmemeli.
+
+🔹 5. Pipes (|)
+📌 Amaç:
+Komutlar arasında veri akışı sağlamak.
+
+📦 Gerekli Kod Blokları:
+pipe(), fork(), dup2() ile standart output bir sonraki komutun input'una bağlanır.
+
+Birden fazla pipe'ı desteklemek gerekir.
+
+⚠️ Dikkat Edilecekler:
+Her pipe için ayrı process açılmalı.
+
+Pipe sonrası close()’lar doğru yapılmazsa leak olur.
+
+İlk komutun stdin’i normaldir, son komutun stdout’u normaldir.
+
+🔹 6. Environment Variables ($, export, unset)
+📌 Amaç:
+Shell değişkenlerini yönetmek.
+
+📦 Gerekli Kod Blokları:
+export VAR=value → env listesine ekle
+
+unset VAR → env’den sil
+
+echo $VAR → doğru değişkeni yazdır
+
+Ortam değişkenlerini envp'den kendi linked list’inize kopyalayın
+
+⚠️ Dikkat Edilecekler:
+env komutu tüm ortam değişkenlerini listelemeli
+
+$?, özel bir değişkendir: son komutun çıkış durumu
+
+Parametre genişletme ($USER) quotes içinde farklı davranır
+
+🔹 7. Signals (Ctrl+C, Ctrl+\ vs.)
+📌 Amaç:
+Shell davranışlarını sinyallere göre değiştirmek.
+
+📦 Gerekli Kod Blokları:
+signal(SIGINT, handler) ile Ctrl+C yakala
+
+SIGQUIT (Ctrl+) varsayılan davranışına dönmeli child’da
+
+Heredoc sırasında sinyal farklı çalışmalı
+
+⚠️ Dikkat Edilecekler:
+Ana shell’de Ctrl+C satırı temizlemeli ama shell kapanmamalı
+
+SIGINT ile child process öldürülmeli ama parent devam etmeli
+
+🔹 8. Exit Status & Error Handling
+📌 Amaç:
+Shell'in her komuttan sonra doğru exit status üretmesini sağlamak.
+
+📦 Gerekli Kod Blokları:
+exit komutu → doğru status ile shell’i kapatmalı
+
+Her komut çalıştıktan sonra WEXITSTATUS ile durumu oku
+
+Hatalı durumlarda uygun hata mesajı ver
+
+⚠️ Dikkat Edilecekler:
+exit 256 → exit 0 ile aynı değil (mask uygulanır)
+
+command not found → status 127
+
+permission denied → status 126
+
+🔹 Genel Tavsiyeler:
+🔁 Her komut yapısını struct command gibi bir yapıda tut.
+
+🧪 valgrind kullanarak bellek sızıntılarını kontrol et.
+
+📜 25 satır ve 5 fonksiyon kuralına dikkat et (Norminette).
+
+🔄 main loop sonsuz döngü şeklinde olmalı: while (1)
+
+🗂️ Örnek Dosya Yapısı:
+rust
+Kopyala
+Düzenle
+minishell/
+│
+├── main.c                  -> Main loop ve readline
+├── lexer/                  -> Tokenizer fonksiyonları
+├── parser/                 -> Syntax tree veya komut struct oluşturma
+├── executor/               -> Komutları çalıştırma (pipes, redirections)
+├── builtins/               -> echo, cd, export, exit vs.
+├── env/                    -> Ortam değişkenlerini yönetme
+├── signals/                -> Signal handler'lar
+├── utils/                  -> String, fd, error handling yardımcı fonksiyonlar
