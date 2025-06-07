@@ -1,4 +1,4 @@
-Elbette! 42 okullarındaki minishell projesi, kendi küçük bir kabuk (shell) programını yazmanı hedefleyen bir projedir. Bu projede birçok alt konu birleşir: parsing, execution, pipes, redirections, environment management, builtins, ve signal handling gibi.
+42 okullarındaki minishell projesi, kendi küçük bir kabuk (shell) programını yazmanı hedefleyen bir projedir. Bu projede birçok alt konu birleşir: parsing, execution, pipes, redirections, environment management, builtins, ve signal handling gibi.
 
 Aşağıda, projeyi ana başlıklarına ayırarak hangi kod bloklarının olması gerektiğini, bu blokların amaçlarını ve dikkat edilmesi gereken önemli noktaları açıklıyorum:
 
