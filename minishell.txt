@@ -161,27 +161,191 @@ exit 256 → exit 0 ile aynı değil (mask uygulanır)
 command not found → status 127
 
 permission denied → status 126
+42 okulundaki Minishell projesi, bir Unix kabuğunun (bash, zsh vb.) temel işlevlerini yeniden yazmayı hedefler. Amaç, bir komut satırı yorumlayıcısı (shell) yazarak process yönetimi, file descriptor, sinyal yönetimi, parsing, redirection ve environment gibi temel Unix konularını öğrenmektir.
 
-🔹 Genel Tavsiyeler:
-🔁 Her komut yapısını struct command gibi bir yapıda tut.
+Aşağıda sana Minishell projesinde yapman gerekenleri, öğrenmen gereken fonksiyonları, kütüphaneleri ve projedeki ana yapı taşlarını adım adım anlatıyorum:
 
-🧪 valgrind kullanarak bellek sızıntılarını kontrol et.
+🔧 1. GEREKSİNİMLER
+✅ Zorunlu Özellikler
+Prompt gösterimi (örneğin: minishell$ )
 
-📜 25 satır ve 5 fonksiyon kuralına dikkat et (Norminette).
+Komutları çalıştırma (örn. ls, echo, cat)
 
-🔄 main loop sonsuz döngü şeklinde olmalı: while (1)
+Tekli ve çoklu komutlar (ls -la | grep txt)
 
-🗂️ Örnek Dosya Yapısı:
-rust
+Redirection: >, >>, <, <<
+
+Pipe (|)
+
+Builtin komutları (örn. cd, echo, pwd, export, unset, env, exit)
+
+Environment değişkenleri yönetimi ($PATH, $USER gibi)
+
+Signal handling (ctrl + C, ctrl + D, ctrl + \)
+
+Global değişken yok (Norm kurallarına uygun yazım)
+
+Bellek sızıntısı olmamalı (Valgrind kullanımı önerilir)
+
+🧱 2. PROJEDEKİ ANA YAPILAR VE BLOKLAR
+Aşağıdaki yapılar genel bir Minishell mimarisi oluşturur:
+
+Bileşen	Görev
+main.c	Uygulama giriş noktası, readline ve döngüyü başlatır
+parser.c	Kullanıcıdan alınan string'i tokenize eder ve anlamlı hale getirir
+executor.c	Komutları çalıştırır, forking, piping, redirection yönetimi
+builtin.c	Builtin komutları uygular (cd, export, vs.)
+env.c	Ortam değişkenlerini işler (getenv, setenv, vs.)
+signal.c	Sinyal yönetimi (SIGINT, SIGQUIT)
+redir.c	Redirectionları (>, <, >>, <<) işler
+pipe.c	Pipe ile komutları birbirine bağlar (`ls
+utils/	Yardımcı fonksiyonlar (strjoin, ft_split, free_tab, vs.)
+
+🧠 3. KAZANILACAK BECERİLER VE KONU BAŞLIKLARI
+🔸 Shell Tasarımı ve Parslama
+readline() → kullanıcı girdisi almak için
+
+strtok, ft_split, lexer, parser → girdi ayrıştırma
+
+quotes, escape chars, $VAR gibi karmaşıklıkları yönetmek
+
+🔸 Process ve Pipe Yönetimi
+fork(), execve(), waitpid() → yeni process açma ve yönetme
+
+pipe() → komutlar arasında veri iletimi
+
+🔸 Dosya Yönlendirme (Redirection)
+dup(), dup2(), open(), close() → stdout, stdin yönlendirme
+
+>, >>, <, << gibi yönlendirme türleri
+
+heredoc: << limiter → özel durum, kullanıcıdan gelen satırlar
+
+🔸 Signal Management (Sinyal Yönetimi)
+signal(), sigaction() → Ctrl+C, Ctrl+\ davranışı
+
+readline içinde özel sinyal yönetimi
+
+🔸 Builtin Komutlar
+Shell'de ayrı olarak handle edilmesi gereken komutlar:
+
+echo
+
+cd
+
+pwd
+
+export
+
+unset
+
+env
+
+exit
+
+🔸 Ortam Değişkenleri Yönetimi
+$HOME, $PATH, $USER gibi değişkenlerin okunması ve değiştirilmesi
+
+envp üzerinden environment yapısını yönetme
+
+getenv(), setenv(), unsetenv() (veya elle yazım)
+
+🔸 Bellek Yönetimi
+Her döngüde doğru malloc/free kullanımı
+
+Her yerde valgrind ile leak kontrolü
+
+🔧 4. ÖĞRENİLMESİ GEREKEN FONKSİYONLAR (EN ÇOK KULLANILANLAR)
+📌 I/O, Process, Redirection
+Fonksiyon	Açıklama
+readline()	prompt yazdırıp kullanıcı girdisini alır
+fork()	yeni process oluşturur
+execve()	yeni program çalıştırır
+pipe()	pipe yaratır
+dup2()	dosya tanıtıcısını kopyalar (redir)
+open()	dosya açar (redir. için)
+close()	fd kapatma
+waitpid()	child bekleme
+access()	dosya erişilebilir mi kontrol eder
+
+📌 Signal
+Fonksiyon	Açıklama
+signal()	sinyal işleyici tanımlar
+sigaction()	signal yerine kullanılabilir, daha güvenlidir
+kill()	process’e sinyal gönderir
+
+📌 String ve Parsing
+Fonksiyon	Açıklama
+strtok, strchr, strdup, strjoin	string işlemleri
+getenv()	ortam değişkeni alır
+
+⚒️ 5. DOSYA YAPISI ÖNERİSİ
+shell
 Kopyala
 Düzenle
 minishell/
-│
-├── main.c                  -> Main loop ve readline
-├── lexer/                  -> Tokenizer fonksiyonları
-├── parser/                 -> Syntax tree veya komut struct oluşturma
-├── executor/               -> Komutları çalıştırma (pipes, redirections)
-├── builtins/               -> echo, cd, export, exit vs.
-├── env/                    -> Ortam değişkenlerini yönetme
-├── signals/                -> Signal handler'lar
-├── utils/                  -> String, fd, error handling yardımcı fonksiyonlar
+├── Makefile
+├── main.c
+├── minishell.h
+├── parser/
+│   ├── lexer.c
+│   ├── parser.c
+│   └── quotes.c
+├── executor/
+│   ├── executor.c
+│   ├── pipe.c
+│   ├── redirection.c
+├── builtins/
+│   ├── cd.c
+│   ├── export.c
+│   ├── env.c
+│   ├── unset.c
+│   ├── exit.c
+│   └── echo.c
+├── signals/
+│   └── signals.c
+├── env/
+│   └── env_utils.c
+├── utils/
+│   ├── ft_split.c
+│   ├── free_utils.c
+│   └── string_utils.c
+🔁 6. UYGULAMA DÖNGÜSÜ
+c
+Kopyala
+Düzenle
+while (1)
+{
+	print_prompt();
+	line = readline("minishell$ ");
+	add_history(line);
+	tokens = tokenize(line);
+	commands = parse(tokens);
+	execute(commands, envp);
+	free_everything();
+}
+🧪 7. TEST VE HATA KONTROLÜ
+✅ Test Etmen Gerekenler:
+ls -la | grep minishell
+
+cat < infile | grep test > outfile
+
+echo hello > file && cat file
+
+export VAR=test && echo $VAR
+
+cd, cd .., cd ~/, cd $HOME
+
+exit 42 sonrası $? değeri
+
+heredoc: cat << EOF ...
+
+🎯 8. İLERİ SEVİYE (Bonus için)
+&& ve || gibi mantıksal operatörleri tanımak
+
+Komut gruplandırma: (ls && echo ok)
+
+Wildcard: *.c
+
+History dosyasına kayıt
+
