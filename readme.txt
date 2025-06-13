@@ -1,4 +1,4 @@
-🐚 Minishell Project
+<h1 align="center">🐚 Minishell Project</h1>
 
 🚀 Features
 
