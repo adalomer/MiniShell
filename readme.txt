@@ -1,106 +1,166 @@
-<h1 align="center">🐚 Minishell Project</h1>
+Minishell
+42 Projesi | Minimal bir Bash benzeri shell implementasyonu
+Komut yorumlayıcısı, process yönetimi, piping, redirection, sinyaller ve ortam değişkenleri gibi temel UNIX kavramlarını öğrenmek için geliştirilmiştir.
 
-🚀 Features
+🧠 Projenin Amacı
+Minishell, bash veya zsh gibi temel bir kabuğun en temel fonksiyonlarını kendi ellerinle yeniden inşa etmeyi hedefler. Bu projeyle birlikte:
 
-🖥️ Custom prompt (minishell$)
+Shell ortamı tasarımı
 
-🧠 Command parsing with support for quotes and variables
+Komut ayrıştırma (lexing/parsing)
 
-🔗 Pipes and redirection support: >, >>, <, <<
+Process oluşturma ve yönetme (fork / execve)
 
-📦 Environment variable expansion and editing
+Pipe (|), yönlendirme (>, <, >>, <<)
 
-🧬 Built-in commands: cd, echo, pwd, export, unset, env, exit
+Environment değişken yönetimi
 
-🛑 Signal handling (Ctrl+C, Ctrl+\)
+Built-in komutlar
 
-🔄 Command chaining with heredocs
+Sinyal yakalama ve yönetimi
 
-🗂️ Project Structure
+Bellek yönetimi
 
+gibi sistem programlamanın yapı taşlarını öğrenmiş olacaksın.
+
+🧩 Proje Mimarisi
+php
+Kopyala
+Düzenle
 minishell/
-├── main.c              # Entry point and main loop
-├── parser/             # Tokenizing, parsing, quotes
+├── main.c                   # Shell loop & readline
+├── minishell.h              # Global yapılar & tanımlar
+├── parser/                  # Tokenizer & command parser
 │   ├── lexer.c
 │   ├── parser.c
 │   └── quotes.c
-├── executor/           # Fork, execve, redirection, pipe
+├── executor/                # Komut çalıştırma, fork, redir
 │   ├── executor.c
 │   ├── pipe.c
-│   └── redirection.c
-├── builtins/           # Built-in commands implementation
-│   ├── cd.c
-│   ├── export.c
-│   ├── env.c
-│   ├── unset.c
-│   ├── exit.c
-│   └── echo.c
-├── env/                # Environment variable utils
+│   ├── redirection.c
+├── builtins/                # Built-in komutlar
+│   ├── cd.c, echo.c, exit.c, ...
+├── env/                     # Env değişken yönetimi
 │   └── env_utils.c
-├── signals/            # Signal handling
+├── signals/                 # SIGINT, SIGQUIT handler
 │   └── signals.c
-├── utils/              # Helper functions
-│   ├── ft_split.c
-│   ├── free_utils.c
-│   └── string_utils.c
+├── utils/                   # Yardımcı fonksiyonlar
+│   ├── ft_split.c, free_utils.c, ...
+└── Makefile
+⚙️ Çalışma Aşamaları
+1. Readline & Input İşleme
+readline() ile komut al
 
-💡 Key Concepts Learned
+add_history() ile geçmişe ekle
 
-🧠 Parsing & Tokenizing
+Quotes (", '), pipe (|), redirection (<, >, <<, >>) ayrıştır
 
-Handle quotes ', ", escape characters, and $VAR
+2. Parser
+Tokenları command yapısına dönüştür
 
-Support for multi-stage parsing: lexer → syntax tree
+Argümanları ayır, heredoc varsa geçici dosyaya yaz
 
-🔗 Pipes & Execution
+3. Executor
+Komutu fork edip çalıştır
 
-Use of pipe(), fork(), dup2(), execve()
+Gerekirse execve ile PATH içinde ara
 
-Execute chained commands with correct file descriptors
+Built-in ise doğrudan çalıştır (örn. cd, export, exit)
 
-📁 Redirections
+4. Redirection
+dup2, open, close ile yönlendirme ayarları
 
-open(), close(), dup2() for >, <, >>, <<
+> >>: stdout yönlendirme
 
-Heredoc: Read input until limiter, store in temp file
+<: input okuma
 
-🚦 Signal Management
+<<: heredoc, sınırlayıcıya kadar okuma
 
-signal(), sigaction() to handle SIGINT, SIGQUIT
+5. Pipes
+pipe(), dup2() ve fork() ile çoklu komut zinciri
 
-Special handling inside heredoc and child processes
+Örnek: ls | grep foo | wc -l
 
-🧬 Builtins & Env
+6. Environment Değişkenleri
+export VAR=value, unset VAR, echo $VAR
 
-Internal handling without forking when necessary
+$?, $PATH gibi değişkenlerin çözülmesi
 
-Manage environment via linked list (export/unset)
+Kendi ortam değişkeni linked list yapısı oluştur
 
-Expand variables during parsing (e.g. $HOME, $?)
+7. Signals
+SIGINT (Ctrl+C) → readline temizle, shell kapanmaz
 
-🧪 Example Commands to Test
+SIGQUIT (Ctrl+\) → child’da çalışmalı
 
-$ ls -la | grep minishell
-$ echo Hello > out.txt && cat < out.txt
-$ export NAME=Ömer && echo $NAME
-$ cat << EOF
-MiniShell is awesome!
+heredoc sırasında özel signal handler gerekebilir
+
+8. Exit Status
+Komut başarı durumuna göre $? güncellenir
+
+command not found → 127, permission denied → 126
+
+🛠️ Kullanılan Fonksiyonlar
+Kategori	Fonksiyonlar
+I/O & Exec	readline, write, open, close, dup2, execve, access, fork, pipe, waitpid
+Signal	signal, sigaction, kill
+Env	getenv, setenv (manuel), unsetenv
+Parsing	strtok, strjoin, strdup, strchr, ft_split, malloc/free
+
+🔧 Built-in Komutlar
+Komut	Açıklama
+cd	Dizini değiştir
+echo	Argümanları yazdır
+pwd	Geçerli dizini yazdır
+exit	Shell’den çık
+export	Env değişkeni ekle
+unset	Env değişkenini sil
+env	Tüm env değişkenlerini göster
+
+✅ Test Edilmesi Gereken Örnekler
+bash
+Kopyala
+Düzenle
+ls -la | grep minishell
+cat < infile | grep test > outfile
+echo hello > file && cat file
+export NAME=test && echo $NAME
+cd ~/Desktop && pwd
+echo $?
+cat << EOF
+heredoc test
 EOF
-$ cd ../ && pwd
-$ exit 42
+🔥 Bonus (İsteğe Bağlı)
+&&, || gibi mantıksal zincirler
 
-🎓 Educational Gains
+(*.c) gibi wildcard desteği
 
-Mastery of Unix system calls (fork, exec, pipe)
+(ls && echo ok) gibi komut grupları
 
-File descriptor manipulation
+Shell geçmişinin .history dosyasına yazılması
 
-Complex string and memory management in C
+🔒 Kurallar
+✅ Norminette uyumlu
+✅ Bellek sızıntısı yok (Valgrind önerilir)
+✅ Global değişken kullanımı yasak
+✅ readline ve heredoc düzgün sinyal davranışı
 
-Understanding shell architecture from the ground up
+🏁 Başlatmak İçin
+bash
+Kopyala
+Düzenle
+make
+./minishell
+📚 Öğrenilen Konular
+Unix sistem çağrıları
 
-📜 License & Acknowledgements
+Process yönetimi
 
-This project is part of the 42 Network curriculum.
-Feel free to fork, learn, and contribute!
+File descriptor kavramı
+
+Tokenizasyon & parser yazımı
+
+Sinyal ve handler yönetimi
+
+Memory leak avcılığı 🕵️
 
