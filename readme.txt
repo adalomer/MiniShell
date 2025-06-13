@@ -1,104 +1,106 @@
-🐚 Minishell
-Bir Unix kabuğunu sıfırdan yazmaya hazır mısın?
-42 öğrencisinin yazdığı kendi küçük ama güçlü shell uygulaması
+🐚 Minishell Project
 
-🎯 Proje Amacı
-md
-Kopyala
-Düzenle
-Minishell, bir Unix kabuğunun temel işlevlerini yeniden yazarak process, redirection,
-signal, parsing, environment gibi temel sistem konularını öğretmeyi amaçlayan bir projedir.
-📚 Özellikler
-Özellikler	Açıklama
-🖥️ Prompt	minishell$ gibi bir komut istemcisi
-🧠 Parsing	Komutları doğru şekilde ayırma (quotes, pipes, redirections)
-🚀 Execution	execve, fork, pipe, waitpid gibi sistem fonksiyonlarıyla komut çalıştırma
-📦 Builtins	cd, echo, pwd, env, export, unset, exit gibi özel komutlar
-🔀 Redirection	>, >>, <, << gibi giriş/çıkış yönlendirmeleri
-🔗 Pipes	`
-🌿 Environment Vars	$HOME, $PATH, $USER gibi değişkenleri yönetme
-🛑 Signal Handling	Ctrl+C, Ctrl+\ gibi sinyalleri yönetme
-💡 Exit Status	Her komut sonunda $? değeriyle çıkış kodu
+🚀 Features
 
-🧩 Yapılandırma
-cpp
-Kopyala
-Düzenle
+🖥️ Custom prompt (minishell$)
+
+🧠 Command parsing with support for quotes and variables
+
+🔗 Pipes and redirection support: >, >>, <, <<
+
+📦 Environment variable expansion and editing
+
+🧬 Built-in commands: cd, echo, pwd, export, unset, env, exit
+
+🛑 Signal handling (Ctrl+C, Ctrl+\)
+
+🔄 Command chaining with heredocs
+
+🗂️ Project Structure
+
 minishell/
-├── main.c                // Uygulama döngüsü
-├── minishell.h           // Header dosyası
-├── parser/               // Lexing & Parsing dosyaları
+├── main.c              # Entry point and main loop
+├── parser/             # Tokenizing, parsing, quotes
 │   ├── lexer.c
-│   └── parser.c
-├── executor/             // Komutları çalıştırma
+│   ├── parser.c
+│   └── quotes.c
+├── executor/           # Fork, execve, redirection, pipe
 │   ├── executor.c
 │   ├── pipe.c
 │   └── redirection.c
-├── builtins/             // Dahili komutlar
+├── builtins/           # Built-in commands implementation
 │   ├── cd.c
 │   ├── export.c
-│   └── ...
-├── signals/              // Sinyal yönetimi
-│   └── signals.c
-├── env/                  // Environment değişkenleri
+│   ├── env.c
+│   ├── unset.c
+│   ├── exit.c
+│   └── echo.c
+├── env/                # Environment variable utils
 │   └── env_utils.c
-├── utils/                // Yardımcı fonksiyonlar
+├── signals/            # Signal handling
+│   └── signals.c
+├── utils/              # Helper functions
 │   ├── ft_split.c
+│   ├── free_utils.c
 │   └── string_utils.c
-⚙️ Kullanılan Fonksiyonlar
-📁 Kategori	🧠 Fonksiyonlar
-Girdi / Çıktı	readline, dup2, open, close
-Süreç Yönetimi	fork, execve, waitpid, pipe
-Sinyal	signal, sigaction, kill
-String	strtok, strjoin, getenv, ft_split
 
-🔄 Uygulama Döngüsü
-c
-Kopyala
-Düzenle
-while (1)
-{
-	print_prompt();
-	line = readline("minishell$ ");
-	add_history(line);
-	tokens = tokenize(line);
-	commands = parse(tokens);
-	execute(commands, envp);
-	free_everything();
-}
-🧪 Test Örnekleri
-bash
-Kopyala
-Düzenle
+💡 Key Concepts Learned
+
+🧠 Parsing & Tokenizing
+
+Handle quotes ', ", escape characters, and $VAR
+
+Support for multi-stage parsing: lexer → syntax tree
+
+🔗 Pipes & Execution
+
+Use of pipe(), fork(), dup2(), execve()
+
+Execute chained commands with correct file descriptors
+
+📁 Redirections
+
+open(), close(), dup2() for >, <, >>, <<
+
+Heredoc: Read input until limiter, store in temp file
+
+🚦 Signal Management
+
+signal(), sigaction() to handle SIGINT, SIGQUIT
+
+Special handling inside heredoc and child processes
+
+🧬 Builtins & Env
+
+Internal handling without forking when necessary
+
+Manage environment via linked list (export/unset)
+
+Expand variables during parsing (e.g. $HOME, $?)
+
+🧪 Example Commands to Test
+
 $ ls -la | grep minishell
-$ echo "Hello" > out.txt && cat < out.txt
+$ echo Hello > out.txt && cat < out.txt
 $ export NAME=Ömer && echo $NAME
 $ cat << EOF
-heredoc test
+MiniShell is awesome!
 EOF
-🌈 Bonus (isteğe bağlı)
-&&, || gibi mantıksal operatörler
+$ cd ../ && pwd
+$ exit 42
 
-Komut gruplama: (ls && echo done)
+🎓 Educational Gains
 
-*, ?.c gibi wildcard desteği
+Mastery of Unix system calls (fork, exec, pipe)
 
-History dosyasına kayıt alma
+File descriptor manipulation
 
-jobs, fg, bg gibi job control özellikleri (zorunlu değil)
+Complex string and memory management in C
 
-💥 Öğrendiklerim
-✅ UNIX sistem çağrıları
-✅ Shell tasarımı
-✅ Process & Signal yönetimi
-✅ Lexing ve parsing
-✅ Bellek yönetimi (Valgrind 💚)
+Understanding shell architecture from the ground up
 
-🧠 Kapanış Notu
-Minishell projesi, düşük seviyeli programlamada uzmanlaşmak isteyen herkes için adeta bir sınavdır.
+📜 License & Acknowledgements
 
-"Bir shell yazdın mı? Artık komut satırına başka gözle bakacaksın!"
+This project is part of the 42 Network curriculum.
+Feel free to fork, learn, and contribute!
 
-🤝 Katkı ve Lisans
-Bu proje 42 Network kapsamında gerçekleştirilmiştir.
-Kodlar ve içerikler özgürce geliştirilebilir.
